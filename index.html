@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Options Position Sizing</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <div class="page">
+    <div class="layout-surface" data-layout-surface>
+      <header class="hero card" data-card-id="hero">
+        <div class="hero-text">
+          <p class="eyebrow">Local-first · Options sizing</p>
+          <h1>Size option positions in seconds</h1>
+          <p>Black-Scholes delta drives the estimate. You drive the assumptions.</p>
+        </div>
+        <div class="hero-focus">
+          <span>Focused ticker</span>
+          <strong data-output="selectedTicker">Custom</strong>
+        </div>
+      </header>
+
+      <div class="layout-controls">
+        <button id="editorToggle" class="ghost-btn" type="button">Enter Editor Mode</button>
+        <button id="saveLayout" class="ghost-btn" type="button" disabled>Save Layout</button>
+        <button id="resetLayout" class="ghost-btn secondary" type="button">Reset Layout</button>
+      </div>
+
+      <div class="workspace">
+        <aside class="watchlist-panel" data-card-id="watchlist">
+        <div class="section-heading">
+          <div class="heading-row">
+            <h2>Quick watchlist</h2>
+          </div>
+          <p>Tap a ticker to load assumptions for a $1k target.</p>
+          <p class="hotkey-status" id="hotkeyStatus">Click + on a ticker, press a key to bind it. Hit that key later to jump instantly.</p>
+        </div>
+        <div class="watchlist-list" id="stockList"></div>
+        </aside>
+
+        <div class="content-grid">
+          <div class="input-stack">
+          <section class="card panel" id="stock-inputs" data-card-id="stock-inputs">
+          <div class="panel-heading">
+            <span class="panel-tag">01</span>
+            <h2>Stock inputs</h2>
+          </div>
+          <div class="grid">
+            <label>
+              <span>Ticker</span>
+              <input type="text" id="ticker" placeholder="e.g. AAPL">
+            </label>
+            <label>
+              <span>Stock Price ($)</span>
+              <input type="number" id="stockPrice" min="0" step="0.01">
+            </label>
+            <label>
+              <span>Expected Move ($)</span>
+              <input type="number" id="stockMove" step="0.01">
+            </label>
+          </div>
+          </section>
+
+          <section class="card panel" id="option-assumptions" data-card-id="option-assumptions">
+          <div class="panel-heading">
+            <span class="panel-tag">02</span>
+            <h2>Option assumptions</h2>
+          </div>
+          <div class="grid">
+            <label>
+              <span>Option Type</span>
+              <select id="optionType">
+                <option value="call">Call</option>
+                <option value="put">Put</option>
+              </select>
+            </label>
+            <label>
+              <span>Strike ($)</span>
+              <input type="number" id="strikePrice" min="0" step="0.01">
+            </label>
+            <label>
+              <span>Days to Expiration</span>
+              <input type="number" id="daysToExpiration" min="0" step="1">
+            </label>
+            <label>
+              <span>Implied Vol (%)</span>
+              <input type="number" id="impliedVol" min="0" step="0.1">
+            </label>
+            <label>
+              <span>Risk-Free Rate (%)</span>
+              <input type="number" id="riskFreeRate" step="0.01" value="3">
+            </label>
+          </div>
+          </section>
+
+          <section class="card panel" id="profit-target" data-card-id="profit-target">
+          <div class="panel-heading">
+            <span class="panel-tag">03</span>
+            <h2>Profit target</h2>
+          </div>
+          <div class="grid">
+            <label>
+              <span>Target Profit ($)</span>
+              <input type="number" id="targetProfit" min="0" step="50" value="1000">
+            </label>
+            <label>
+              <span>Contract Override</span>
+              <input type="number" id="contractOverride" min="0" step="1" placeholder="optional">
+            </label>
+          </div>
+          </section>
+          </div>
+
+          <div class="result-stack">
+          <section class="card spotlight" data-card-id="spotlight">
+            <div class="spotlight-layout">
+              <div class="spotlight-main">
+                <p class="label">Contracts needed</p>
+                <div class="spotlight-value" data-output="contractsPrimary">—</div>
+                <p class="spotlight-note" data-output="contractNote">Provide a target and stock move to size properly.</p>
+              </div>
+              <div class="strike-choices strike-choices-compact" id="strikeChoices" aria-label="Quick strike selection"></div>
+            </div>
+          </section>
+
+          <section class="card output" data-card-id="output">
+          <div class="panel-heading">
+            <span class="panel-tag">04</span>
+            <h2>Live results</h2>
+          </div>
+          <div class="output-grid">
+            <div class="metric-box" data-metric-id="delta">
+              <button type="button" class="metric-remove" aria-label="Remove Delta">&times;</button>
+              <span class="label">Delta</span>
+              <strong data-output="delta">—</strong>
+            </div>
+            <div class="metric-box" data-metric-id="perContract">
+              <button type="button" class="metric-remove" aria-label="Remove P&L / Contract">&times;</button>
+              <span class="label">P&amp;L / Contract</span>
+              <strong data-output="perContract">—</strong>
+            </div>
+            <div class="metric-box" data-metric-id="contracts">
+              <button type="button" class="metric-remove" aria-label="Remove Contracts Needed">&times;</button>
+              <span class="label">Contracts Needed</span>
+              <strong data-output="contracts">—</strong>
+            </div>
+            <div class="metric-box" data-metric-id="optionPrice">
+              <button type="button" class="metric-remove" aria-label="Remove Option Price">&times;</button>
+              <span class="label">Option Price (est.)</span>
+              <strong data-output="optionPrice">—</strong>
+            </div>
+            <div class="metric-box" data-metric-id="totalCost">
+              <button type="button" class="metric-remove" aria-label="Remove Total Cost">&times;</button>
+              <span class="label">Total Cost</span>
+              <strong data-output="totalCost">—</strong>
+            </div>
+            <div class="metric-box" data-metric-id="requiredMove">
+              <button type="button" class="metric-remove" aria-label="Remove Required Move">&times;</button>
+              <span class="label">Required Move</span>
+              <strong data-output="requiredMove">—</strong>
+            </div>
+          </div>
+          <div class="loss-box" id="lossBox">
+            <div>
+              <p class="label">If price moves against you by the expected amount</p>
+              <p class="loss-caption" data-output="lossCaption">Set a move to see risk.</p>
+            </div>
+            <strong data-output="lossValue">—</strong>
+          </div>
+          <p class="summary" data-output="summary">Enter inputs to see estimates.</p>
+          </section>
+
+          <section class="card warning" id="warnings" data-card-id="warnings">
+          <div class="panel-heading">
+            <span class="panel-tag">05</span>
+            <h2>Warning</h2>
+          </div>
+          <p>This is an estimate. Real option prices move with IV, time decay, and liquidity.</p>
+          </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
