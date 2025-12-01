@@ -65,26 +65,24 @@ const stockPresets = [
 const presetMap = new Map(stockPresets.map((preset) => [preset.ticker, preset]));
 
 // Optional live-quote API configuration.
-// NOTE: This app works without any API. To enable live prices:
-// 1) Choose a provider that supports client-side requests (CORS) such as Finnhub/Twelve Data/etc.
-// 2) Fill in baseUrl and apiKey, then set enabled: true.
-// Example for Finnhub (https://finnhub.io):
+// NOTE: This app works without any API. To enable live prices with Finnhub:
+//   enabled: true
 //   baseUrl: "https://finnhub.io/api/v1/quote"
-//   buildUrl: (symbol) => `${baseUrl}?symbol=${symbol}&token=${apiKey}`
+//   apiKey: "YOUR_FINNHUB_TOKEN_HERE"
 const QUOTE_API = {
-  enabled: false, // set to true after configuring baseUrl and apiKey
-  baseUrl: "",
-  apiKey: "",
-  // Customize this to match your provider's URL shape
+  enabled: true, // set to true after configuring baseUrl and apiKey
+  baseUrl: "https://finnhub.io/api/v1/quote",
+  apiKey: "d4mf8v9r01qjidhvf0pgd4mf8v9r01qjidhvf0q0",
+  // Build the full URL for a given symbol. Finnhub shape: /quote?symbol=SYM&token=KEY
   buildUrl(symbol) {
     if (!this.baseUrl || !this.apiKey) return null;
     const url = new URL(this.baseUrl);
-    url.searchParams.set("symbol", symbol);
+    url.searchParams.set("symbol", symbol.toUpperCase());
     url.searchParams.set("token", this.apiKey);
     return url.toString();
   },
-  // Customize this to pull the last price out of the provider JSON
-  // For Finnhub: response.c is current price
+  // Extract last price from the provider JSON
+  // For Finnhub quote: { c: current price, h, l, o, pc, t }
   extractPrice(json) {
     if (!json) return null;
     if (typeof json.c === "number") return json.c;
@@ -92,8 +90,8 @@ const QUOTE_API = {
     return null;
   },
   // How often to refresh quotes (in ms)
-  activePollMs: 500, // active ticker: ~0.5s
-  backgroundPollMs: 4000, // other watchlist tickers: ~4s
+  activePollMs: 2000, // active ticker: ~2s (safer for free tier)
+  backgroundPollMs: 15000, // other watchlist tickers: ~15s
 };
 
 // Cache of latest live prices per ticker
@@ -813,11 +811,11 @@ function startQuotePolling() {
   const activeInterval =
     QUOTE_API.activePollMs && Number.isFinite(QUOTE_API.activePollMs)
       ? QUOTE_API.activePollMs
-      : 500;
+      : 2000;
   const backgroundInterval =
     QUOTE_API.backgroundPollMs && Number.isFinite(QUOTE_API.backgroundPollMs)
       ? QUOTE_API.backgroundPollMs
-      : 4000;
+      : 15000;
 
   // High-frequency polling for the active ticker
   setInterval(refreshActiveQuote, activeInterval);
@@ -868,6 +866,9 @@ async function refreshQuoteForTicker(ticker) {
     if (typeof price !== "number" || !Number.isFinite(price) || price <= 0) {
       return;
     }
+
+    // Debug logging so you can verify live pricing is working
+    console.log("Live quote", ticker, price);
 
     livePrices.set(ticker, price);
     const preset = presetMap.get(ticker);
